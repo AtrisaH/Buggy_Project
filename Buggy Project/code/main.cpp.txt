@@ -1,0 +1,455 @@
+/*
+====================================================
+BUGGY DFPLAYER AUDIO PROJECT - TEST CODES
+====================================================
+
+Hardware assumptions:
+- Arduino board
+- DFPlayer Mini
+- DFPlayer RX -> Arduino pin 11 (through 1k resistor recommended)
+- DFPlayer TX -> Arduino pin 10
+- DFPlayer VCC -> 5V
+- DFPlayer GND -> GND
+
+SD Card:
+- FAT32
+- Files:
+  0001.mp3 = background song
+  0002.mp3 = horn
+  0003.mp3 = warning beep
+
+Button:
+- GPIO 6 -> A0
+- Button pressed connects A0 to GND
+
+Motor pins:
+FWD:
+A0 + A3
+
+BWD:
+A1 + A2
+
+====================================================
+*/
+
+
+/*
+====================================================
+TEST 1: BASIC BOARD SERIAL TEST
+====================================================
+*/
+
+void setup() {
+  Serial.begin(115200);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  Serial.println("Diagnostic Test Started");
+}
+
+void loop() {
+
+  digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+
+  Serial.println(millis());
+
+  delay(500);
+}
+
+
+
+/*
+====================================================
+TEST 2: TEST MOTOR GPIO PINS
+====================================================
+*/
+
+void setup() {
+
+  Serial.begin(115200);
+
+  pinMode(A0, OUTPUT);
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+  pinMode(A3, OUTPUT);
+
+  Serial.println("Motor GPIO test");
+
+}
+
+void loop() {
+
+  // Forward
+  Serial.println("Forward");
+
+  digitalWrite(A0,HIGH);
+  digitalWrite(A3,HIGH);
+
+  delay(2000);
+
+
+  // Stop
+  digitalWrite(A0,LOW);
+  digitalWrite(A3,LOW);
+
+  delay(1000);
+
+
+  // Backward
+  Serial.println("Backward");
+
+  digitalWrite(A1,HIGH);
+  digitalWrite(A2,HIGH);
+
+  delay(2000);
+
+
+  // Stop
+  digitalWrite(A1,LOW);
+  digitalWrite(A2,LOW);
+
+  delay(1000);
+
+}
+
+
+
+/*
+====================================================
+TEST 3: RAW DFPLAYER PLAY COMMAND
+(no library)
+====================================================
+*/
+
+#include <SoftwareSerial.h>
+
+SoftwareSerial dfSerial(10,11);
+
+
+void setup(){
+
+  Serial.begin(115200);
+
+  dfSerial.begin(9600);
+
+  delay(2000);
+
+  Serial.println("Sending play command");
+
+  playTrack(1);
+
+}
+
+
+void loop(){}
+
+
+
+void playTrack(byte track){
+
+  byte command[] = {
+    0x7E,
+    0xFF,
+    0x06,
+    0x03,
+    0x00,
+    0x00,
+    track,
+    0xEF
+  };
+
+
+  for(int i=0;i<8;i++){
+
+    dfSerial.write(command[i]);
+
+  }
+
+}
+
+
+
+/*
+====================================================
+TEST 4: DFPLAYER LIBRARY TEST
+====================================================
+*/
+
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+
+SoftwareSerial dfSerial(10,11);
+
+DFRobotDFPlayerMini player;
+
+
+void setup(){
+
+  Serial.begin(115200);
+
+  dfSerial.begin(9600);
+
+
+  Serial.println("Initializing DFPlayer...");
+
+
+  if(!player.begin(dfSerial)){
+
+    Serial.println("DFPlayer failed");
+
+    while(true);
+
+  }
+
+
+  Serial.println("DFPlayer ready");
+
+
+  player.volume(25);
+
+
+  player.play(1);
+
+}
+
+
+void loop(){}
+
+
+
+
+
+/*
+====================================================
+TEST 5: SIMPLE HORN BUTTON
+A0 BUTTON -> GND
+====================================================
+*/
+
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+
+SoftwareSerial dfSerial(10,11);
+
+DFRobotDFPlayerMini player;
+
+
+#define HORN_BUTTON A0
+
+
+bool oldState = HIGH;
+
+
+
+void setup(){
+
+  Serial.begin(115200);
+
+  dfSerial.begin(9600);
+
+
+  pinMode(HORN_BUTTON,INPUT_PULLUP);
+
+
+
+  if(!player.begin(dfSerial)){
+
+    Serial.println("DFPlayer failed");
+
+    while(true);
+
+  }
+
+
+  player.volume(25);
+
+}
+
+
+
+void loop(){
+
+  bool state = digitalRead(HORN_BUTTON);
+
+
+  // Detect button press
+
+  if(state == LOW && oldState == HIGH){
+
+    Serial.println("Horn!");
+
+    player.play(2);
+
+  }
+
+
+  oldState = state;
+
+
+}
+
+
+
+
+
+/*
+====================================================
+TEST 6: FINAL IDEA
+BACKGROUND MUSIC LOOP
++ ULTRASONIC WARNING
++ BUTTON HORN
+
+Track 1 = background
+Track 2 = horn
+Track 3 = warning beep
+
+(Use this after DFPlayer works)
+====================================================
+*/
+
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+
+SoftwareSerial dfSerial(10,11);
+
+DFRobotDFPlayerMini player;
+
+
+#define BUTTON A0
+
+#define TRIG 7
+#define ECHO 6
+
+
+bool hornPressed=false;
+bool obstacle=false;
+
+
+
+void setup(){
+
+  Serial.begin(115200);
+
+  dfSerial.begin(9600);
+
+
+  pinMode(BUTTON,INPUT_PULLUP);
+
+
+  pinMode(TRIG,OUTPUT);
+
+  pinMode(ECHO,INPUT);
+
+
+
+  if(!player.begin(dfSerial)){
+
+    Serial.println("DFPlayer failed");
+
+    while(true);
+
+  }
+
+
+
+  player.volume(25);
+
+
+  // Background music
+
+  player.loop(1);
+
+}
+
+
+
+void loop(){
+
+
+  // HORN
+
+  if(digitalRead(BUTTON)==LOW && !hornPressed){
+
+    hornPressed=true;
+
+    player.play(2);
+
+  }
+
+
+  if(digitalRead(BUTTON)==HIGH){
+
+    hornPressed=false;
+
+  }
+
+
+
+
+  // ULTRASONIC 
+  //The feauture that when the car is close to sth it'll generate a beeping sound and which the sound gets increasingly faster
+  //when the distance gets smaller
+
+  long distance=getDistance();
+
+
+  if(distance>0 && distance<20){
+
+
+    if(!obstacle){
+
+      obstacle=true;
+
+      player.play(3);
+
+    }
+
+
+  }
+
+  else{
+
+
+    if(obstacle){
+
+      obstacle=false;
+
+      player.loop(1);
+
+    }
+
+
+  }
+
+
+}
+
+
+
+long getDistance(){
+
+
+  digitalWrite(TRIG,LOW);
+
+  delayMicroseconds(2);
+
+
+  digitalWrite(TRIG,HIGH);
+
+  delayMicroseconds(10);
+
+
+  digitalWrite(TRIG,LOW);
+
+
+
+  long time=pulseIn(ECHO,HIGH,25000);
+
+
+  return time*0.034/2;
+
+
+}

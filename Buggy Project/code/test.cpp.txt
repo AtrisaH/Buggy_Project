@@ -1,0 +1,68 @@
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+SoftwareSerial mySerial(10, 11); // RX, TX
+DFRobotDFPlayerMini myDFPlayer;
+
+void setup() {
+  mySerial.begin(9600);
+  Serial.begin(115200);
+
+  if (!myDFPlayer.begin(mySerial)) {
+    Serial.println("Unable to begin:");
+    Serial.println("1. Check wiring.");
+    Serial.println("2. Is the SD card inserted?");
+    while (true);
+  }
+
+  Serial.println("DFPlayer Mini ready.");
+
+  myDFPlayer.volume(25);  // Volume level: 0-30
+}
+
+
+// Right now basically this code plays 5 sounds and then repeats it
+
+void loop() {
+  goForward();
+  delay(3000);
+  
+  goBackward();
+  delay(3000);
+
+  turnLeft();
+  delay(3000);
+
+  turnRight();
+  delay(3000);
+
+  honk();
+  delay(3000);
+}
+
+//here is basically where you have to add the functions that are the inputs for the dfplayer
+
+void goForward() {
+  myDFPlayer.play(1); // 0001.mp3
+  //Add the motot code for forward here
+}
+
+void goBackward() {
+  myDFPlayer.play(2); // 002.mp3
+  //add the code for reversing here in the loop
+}
+
+void turnLeft() {
+  myDFPlayer.play(3); // 003.mp3
+  //turn left code should be added here
+}
+
+void turnRight() {
+  myDFPlayer.play(4); // 004.mp3
+  //add the motor turn control right here
+}
+
+void honk() {
+  myDFPlayer.play(5); // 005.mp3
+  //Add whenever we want to honk here (I say like whenever an obstical is een)
+}
