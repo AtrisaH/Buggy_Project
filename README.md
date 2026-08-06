@@ -48,5 +48,4 @@ A photo of the completed buggy is included in the `images/` folder.
 ## Notes
 - The final working code was implemented directly on the hardware during testing and demonstration.
 - The code in this repository represents draft and subsystem test scripts used during development.
-- This project received a mark of **86%**.
 
