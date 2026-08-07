@@ -48,5 +48,5 @@ A photo of the completed buggy is included in the `images/` folder.
 ## Notes
 - The 6-stage test file represents the actual code progression used to build and verify the audio/sensor system, culminating in Test 6 — the final integrated version that ran on the       buggy (background music, horn, and ultrasonic warning). Motor/wheel control was handled separately via the provided H-bridge and BTLE remote system, not by this Arduino.
 - The codes in this repository represents draft and subsystem test scripts used during development.
-- Received a First Class grade. 
+- This subsystem was individually assessed as First Class work within the group project. 
 
